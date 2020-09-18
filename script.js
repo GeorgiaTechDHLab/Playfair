@@ -11,10 +11,10 @@ var margin = {top: 50, right: 100, bottom: 50, left: 50},
 //"D3's time scale is an extension of d3.scale.linear that uses JavaScript Date objects as the domain representation. 
 //Thus, unlike the normal linear scale, domain values are coerced to dates rather than numbers;"
 //https://github.com/mbostock/d3/wiki/Time-Scales
-var x = d3.time.scale()
+var x = d3.scaleTime()
 	.range([0, width]);
 
-var y = d3.scale.linear()
+var y = d3.scaleLinear()
 	.range([height, 0]);
 
 var svg = d3.select("body").append("svg")
@@ -103,9 +103,9 @@ var findCriticalPairs = function(data) {
 // };
 
 
+d3.csv("playfair_nums_est.csv").then(function(data){
 
-d3.csv("playfair_nums_est.csv", function(error, data){
-	if (error) throw error;
+	// if (error) throw error;
 
 	data.forEach(function(d){
 		d.Imports= +d.Imports; //ensures data is in number format 
@@ -121,7 +121,7 @@ d3.csv("playfair_nums_est.csv", function(error, data){
 	var firstYr = d3.min(data, function(d) {return d.Years});
 	var lastYr = d3.max(data, function(d) {return d.Years});
 
-	var maxY = Math.max(maxImport, maxExport);
+	var maxY = Math.max(maxImport, maxExport + 1000000);
 
 
 	//extent is the equivalent of calling min and max simultaneously 
@@ -133,7 +133,7 @@ d3.csv("playfair_nums_est.csv", function(error, data){
 
 	//returns y-axis tickmark labels formatted correctly
 	var tickFormatterY = function(tickVal){
-		if((tickVal/1000000) == 1){ //if the value is 1, omit s
+		if((tickVal/1000000) === 1){ //if the value is 1, omit s
 			return ("1 Million");
 		}else if((tickVal/1000000)%1 === 0){ //if the value is not 1, add an s
 			return (tickVal/1000000 + " Millions");
@@ -154,7 +154,7 @@ d3.csv("playfair_nums_est.csv", function(error, data){
 			yNums.push(i);
 		}
 		return yNums;
-	}
+	};
 
 	//TODO?
 	var tickFormatterX = function(tickVal){
@@ -178,22 +178,18 @@ d3.csv("playfair_nums_est.csv", function(error, data){
 	}
 
 	//x-axis
-	var xAxis = d3.svg.axis()
-		.scale(x)
-		.innerTickSize(-height) //background grid, vertical lines 
-		.outerTickSize([0])
+	var xAxis = d3.axisBottom(x)
+		.tickSizeInner(-height) //background grid, vertical lines
+		.tickSizeOuter([0])
 		// .tickFormat(tickFormatterX)
-		.tickFormat(d3.format("d")) //removes comma from year 
-		.orient("bottom");
+		.tickFormat(d3.format("d")); //removes comma from year
 
 	//y-axis
-	var yAxis = d3.svg.axis()
-		.scale(y)
+	var yAxis = d3.axisRight(y)
 		.tickValues(yValues()) //override default values created by d3 
-	    .innerTickSize(-width) //background grid, horizontal lines 
-		.outerTickSize([0])
-		.tickFormat(tickFormatterY) //calls custom format function 
-		.orient("right"); //orients the lines of the graph
+	    .tickSizeInner(-width) //background grid, horizontal lines
+		.tickSizeOuter([0])
+		.tickFormat(tickFormatterY); //calls custom format function
 
 
 	//line & line2 are area svg for the difference graph (ow would be line svg)
@@ -201,22 +197,23 @@ d3.csv("playfair_nums_est.csv", function(error, data){
 	/****LINE AND AREA FOR DEFINED DATA****/
 
 	//imports line - yellow
-	var line = d3.svg.area()
-		.interpolate("basis") //makes the line curvy
+		//TODO: curve format -> not basis
+	var line = d3.area()
+			.curve(d3.curveCardinal) //makes the line curvy
 		.defined(function(d) { return d.Imports; }) //limits this line to defined data
 		.x(function(d) {return x(d.Years); })
 		.y(function(d) {return y(d.Imports); });
 
 	//exports line - pink
-	var line2 = d3.svg.area()
-		.interpolate("basis") //makes the line curvy 
+	var line2 = d3.area()
+		.curve(d3.curveCardinal)//makes the line curvy
 		.defined(function(d) { return d.Exports; }) //limits this line to defined data 
 		.x(function(d) {return x(d.Years); }) 
 		.y(function(d) {return y(d.Exports); });
 
-	var area = d3.svg.area()
-		.interpolate("basis") //makes the line curvy
-		.defined(function(d) { return d.Imports; }) //limits this area to defined area 
+	var area = d3.area()
+		.curve(d3.curveCardinal) //makes the line curvy
+		.defined(function(d) { return d.Imports; }) //limits this area to defined area
 		.x(function(d) { return x(d.Years)})
 		.y1(function(d) { return y(d.Imports)}); //y1 makes the Imports line the baseline
 
@@ -227,24 +224,24 @@ d3.csv("playfair_nums_est.csv", function(error, data){
 	/****LINE AND AREA FOR UNDEFINED DATA****/
 
 	//imports line - dashed yellow
-    var lineUndefined = d3.svg.line()
-    	.interpolate("basis") //makes the line curvy
+    var lineUndefined = d3.line()
+		.curve(d3.curveCardinal) //makes the line curvy
         .defined(function(d) { console.log(d.critical); return d.critical; }) //returns the data to make the undefined, dashed line
         .x(function(d) { return x(d.Years); })
         .y(function(d) { return y(d.Imports); });
 
     //exports line - dashed pink
-    var lineUndefined2 = d3.svg.line()
-    	.interpolate("basis") //makes the line curvy
+    var lineUndefined2 = d3.line()
+		.curve(d3.curveCardinal) //makes the line curvy
         .defined(function(d) { return d.critical; })
         .x(function(d) { return x(d.Years); })
         .y(function(d) { return y(d.Exports); });
 
-	 var areaUndefined = d3.svg.area()
-	 	.interpolate("basis") //makes the line curvy
-        .defined(function(d) { return d.critical; }) //returns the critical data to limit to undefined area 
-        .x(function(d) { return x(d.Years); }) //years are only the critical years
-        .y1(function(d) {return y(d.Imports)}); //y1 makes the Imports line the baseline, these imports are only the critical point imports
+    var areaUndefined = d3.area()
+		.curve(d3.curveCardinal) //makes the line curvy
+		.defined(function(d) { return d.critical; }) //returns the critical data to limit to undefined area
+		.x(function(d) { return x(d.Years); }) //years are only the critical years
+		.y1(function(d) {return y(d.Imports)}); //y1 makes the Imports line the baseline, these imports are only the critical point imports
 
 
 	/*************************append all of the graphics to the canvas**************************************/
@@ -354,7 +351,7 @@ d3.csv("playfair_nums_est.csv", function(error, data){
 		.attr("class", "axis")
 		.call(xAxis);
 
-	//"time" label 
+	// "time" label
 	svg.append("text")
 		.attr("transform", "translate(" + (width/2) + ")")
 		.attr("y", -10) //place label with correct space adjacent to graph
