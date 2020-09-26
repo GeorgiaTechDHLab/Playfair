@@ -1,7 +1,3 @@
-
-
-
-
 var margin = {top: 50, right: 100, bottom: 50, left: 50},
 	width = 960 - margin.left - margin.right,
 	height = 600 - margin.top - margin.bottom;
@@ -103,7 +99,7 @@ var findCriticalPairs = function(data) {
 // };
 
 
-d3.csv("playfair_nums_est.csv").then(function(data){
+d3.csv("playfair_nums_def.csv").then(function(data){
 
 	// if (error) throw error;
 
@@ -201,15 +197,15 @@ d3.csv("playfair_nums_est.csv").then(function(data){
 	var line = d3.area()
 			.curve(d3.curveCardinal) //makes the line curvy
 		.defined(function(d) { return d.Imports; }) //limits this line to defined data
-		.x(function(d) {return x(d.Years); })
-		.y(function(d) {return y(d.Imports); });
+		.x(d => x(d.Years))
+		.y(d =>y(d.Imports));
 
 	//exports line - pink
 	var line2 = d3.area()
 		.curve(d3.curveCardinal)//makes the line curvy
 		.defined(function(d) { return d.Exports; }) //limits this line to defined data 
-		.x(function(d) {return x(d.Years); }) 
-		.y(function(d) {return y(d.Exports); });
+		.x(d => x(d.Years))
+		.y(d =>y(d.Exports));
 
 	var area = d3.area()
 		.curve(d3.curveCardinal) //makes the line curvy
@@ -227,21 +223,21 @@ d3.csv("playfair_nums_est.csv").then(function(data){
     var lineUndefined = d3.line()
 		.curve(d3.curveCardinal) //makes the line curvy
         .defined(function(d) { console.log(d.critical); return d.critical; }) //returns the data to make the undefined, dashed line
-        .x(function(d) { return x(d.Years); })
-        .y(function(d) { return y(d.Imports); });
+        .x(d => x(d.Years))
+        .y(d =>y(d.Imports));
 
     //exports line - dashed pink
     var lineUndefined2 = d3.line()
 		.curve(d3.curveCardinal) //makes the line curvy
-        .defined(function(d) { return d.critical; })
-        .x(function(d) { return x(d.Years); })
-        .y(function(d) { return y(d.Exports); });
+        .defined(d => d.critical)
+        .x(d => x(d.Years))
+        .y(d => y(d.Exports));
 
     var areaUndefined = d3.area()
 		.curve(d3.curveCardinal) //makes the line curvy
-		.defined(function(d) { return d.critical; }) //returns the critical data to limit to undefined area
-		.x(function(d) { return x(d.Years); }) //years are only the critical years
-		.y1(function(d) {return y(d.Imports)}); //y1 makes the Imports line the baseline, these imports are only the critical point imports
+		.defined(d => d.critical) //returns the critical data to limit to undefined area
+		.x(d => x(d.Years)) //years are only the critical years
+		.y1(d => y(d.Imports)); //y1 makes the Imports line the baseline, these imports are only the critical point imports
 
 
 	/*************************append all of the graphics to the canvas**************************************/
@@ -265,7 +261,7 @@ d3.csv("playfair_nums_est.csv").then(function(data){
 	  .append("path")
 	  	.attr("d", area.y0(0));
 
-	//area below the imports line
+	// area below the imports line
 	svg.append("clipPath")
 		.attr("id", "clip-below")
 	  .append("path")
@@ -274,15 +270,14 @@ d3.csv("playfair_nums_est.csv").then(function(data){
 	svg.append("path")
 		.attr("class", "area above")
 		.attr("clip-path", "url(#clip-above)")
-		.attr("d", area.y0(function(d) { return y(d.Exports); }));
+		.attr("d", area.y0(d => y(d.Exports)));
 
 	svg.append("path")
 		.attr("class", "area below")
 		.attr("clip-path", "url(#clip-below)")
-		.attr("d", area.y0(function(d) { return y(d.Exports); }));
+		.attr("d", area.y0(d => y(d.Exports)));
 
 	/**END DIFFERENCE GRAPH**/
-
 
 
   	//imports
@@ -302,25 +297,23 @@ d3.csv("playfair_nums_est.csv").then(function(data){
 
 		//shape that represents area between the two lines ... fills where the two intersect 
 		svg.append("path")
-			// .attr("class", "area above")
-			.classed("area above", true)
+			.attr("class", "area above")
+			// .classed("area above", true)
 			.attr("clip-path", "url(#clip-above)")
-			.attr("d", areaUndefined.y0(function(d) { return y(d.Exports); }));
-        	// .attr("class", "area area-undefined") //or "area above"
+			.attr("d", areaUndefined.y0(d => y(d.Exports)));
          //    .attr("d", areaUndefined(e));
 
         //same for the area below
 		svg.append("path")
-			// .attr("class", "area below")
-			.classed("area below", true)
+			.attr("class", "area below")
+			// .classed("area below", true)
 			.attr("clip-path", "url(#clip-below)")
-			.attr("d", areaUndefined.y0(function(d) { return y(d.Exports); }));
-        	// .attr("class", "area area-undefined") //or "area above"
+			.attr("d", areaUndefined.y0( d => y(d.Exports)));
 	        // .attr("d", areaUndefined(e));
 
 	    //actually fills in the difference chart
         svg.append("path")
-        	.attr("class", "area area-undefined") //or "area above"
+        	.attr("class", "area area-undefined")
             .attr("d", areaUndefined(e)); //area(e) does the same thing
 
         //dash undefined line for imports
