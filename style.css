@@ -44,7 +44,12 @@ body {
 }
 
 .axis-labels{
-	font-family: 'Times New Roman', serif;
+	font-family: 'Times New Roman', Times, serif;
+}
+
+.axis {
+    font-size: large;
+    font-family: 'chancery_cursiveitalic';
 }
 
 /*outermost border*/
